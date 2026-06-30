@@ -40,13 +40,20 @@
   h2{font-size:17px;margin:22px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--border);}
   .evt-meta{font-size:12.5px;color:var(--muted);margin:2px 0 8px;}
   .evt-meta code{background:var(--chip);color:#cdd6ff;padding:1px 6px;border-radius:6px;}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
-  th{color:var(--muted);font-weight:600;background:rgba(255,255,255,.02);position:sticky;}
-  td code{background:var(--chip);color:#cdd6ff;padding:1px 5px;border-radius:5px;font-size:12px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top;
+    word-break:break-word;overflow-wrap:anywhere;}
+  th{color:var(--muted);font-weight:600;background:rgba(255,255,255,.02);white-space:nowrap;}
+  /* 列宽：类别 / 检查项 / 期望 / 状态 / 问题描述 */
+  th:nth-child(1),td:nth-child(1){width:48px;}
+  th:nth-child(2),td:nth-child(2){width:20%;}
+  th:nth-child(3),td:nth-child(3){width:32%;}
+  th:nth-child(4),td:nth-child(4){width:104px;}
+  th:nth-child(5),td:nth-child(5){width:auto;}
+  td code{background:var(--chip);color:#cdd6ff;padding:1px 5px;border-radius:5px;font-size:12px;white-space:normal;}
   .cat{white-space:nowrap;font-size:11px;color:var(--muted);}
   .cat.attr{color:#9db2ff;} .cat.behav{color:#c4b5fd;} .cat.priv{color:#fca5a5;}
-  td.item{width:30%;} td.exp{width:34%;color:var(--muted);}
+  td.item{color:var(--text);} td.exp{color:var(--muted);}
   select.st{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:4px 6px;font-size:12.5px;width:100%;}
   select.st[data-v="done"]{color:var(--green);border-color:#2f6b53;}
   select.st[data-v="fail"]{color:var(--red);border-color:#7a3b3b;}
@@ -415,7 +422,7 @@ function rowHtml(id, cat, catCls, item, exp){
     <td class="cat ${catCls}">${cat}</td>
     <td class="item">${item}</td>
     <td class="exp">${exp||"—"}</td>
-    <td style="width:120px"><select class="st" data-id="${id}" data-v="${st}">${opts}</select></td>
+    <td><select class="st" data-id="${id}" data-v="${st}">${opts}</select></td>
     <td><textarea class="issue" data-id="${id}" placeholder="问题描述 / 现象 / 复现步骤">${(it.issue||"").replace(/</g,"&lt;")}</textarea></td>
   </tr>`;
 }
