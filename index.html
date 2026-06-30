@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dino English V1.3.0 Firebase 埋点验收清单 V0.21</title>
+<style>
+  :root{
+    --bg:#0f1220;--panel:#171b2e;--panel2:#1e2440;--border:#2a3157;--text:#e7eaf6;
+    --muted:#9aa3c7;--accent:#6c8cff;--green:#34d399;--red:#f87171;--amber:#fbbf24;--chip:#232a4d;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(180deg,#0c0f1c,#0f1220);color:var(--text);line-height:1.55;}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+  h1{font-size:22px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:18px;}
+  .bar{position:sticky;top:0;z-index:10;background:rgba(15,18,32,.92);backdrop-filter:blur(6px);
+    border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:22px;}
+  .meta{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:10px;}
+  .meta label{font-size:12px;color:var(--muted);margin-right:4px;}
+  .meta input,.meta select{background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:5px 8px;font-size:13px;}
+  .progress{height:10px;border-radius:99px;background:var(--chip);overflow:hidden;display:flex;margin:8px 0;}
+  .progress i{display:block;height:100%;}
+  .counts{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;margin-bottom:8px;}
+  .pill{padding:2px 9px;border-radius:99px;background:var(--chip);}
+  .pill.done{color:var(--green);} .pill.fail{color:var(--red);} .pill.na{color:var(--muted);} .pill.todo{color:var(--amber);}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;}
+  button{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;
+    padding:6px 12px;font-size:12.5px;cursor:pointer;}
+  button:hover{border-color:var(--accent);}
+  button.f.active{background:var(--accent);border-color:var(--accent);color:#0c0f1c;font-weight:600;}
+  section{margin-bottom:26px;}
+  h2{font-size:17px;margin:22px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .evt-meta{font-size:12.5px;color:var(--muted);margin:2px 0 8px;}
+  .evt-meta code{background:var(--chip);color:#cdd6ff;padding:1px 6px;border-radius:6px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+  th{color:var(--muted);font-weight:600;background:rgba(255,255,255,.02);position:sticky;}
+  td code{background:var(--chip);color:#cdd6ff;padding:1px 5px;border-radius:5px;font-size:12px;}
+  .cat{white-space:nowrap;font-size:11px;color:var(--muted);}
+  .cat.attr{color:#9db2ff;} .cat.behav{color:#c4b5fd;} .cat.priv{color:#fca5a5;}
+  td.item{width:30%;} td.exp{width:34%;color:var(--muted);}
+  select.st{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:4px 6px;font-size:12.5px;width:100%;}
+  select.st[data-v="done"]{color:var(--green);border-color:#2f6b53;}
+  select.st[data-v="fail"]{color:var(--red);border-color:#7a3b3b;}
+  select.st[data-v="na"]{color:var(--muted);}
+  textarea.issue{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    border-radius:7px;padding:5px 7px;font-size:12.5px;resize:vertical;min-height:30px;font-family:inherit;}
+  tr[data-status="done"]{background:rgba(52,211,153,.05);}
+  tr[data-status="fail"]{background:rgba(248,113,113,.07);}
+  .req{color:var(--red);font-weight:700;} .opt{color:var(--muted);}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px;}
+  footer{margin-top:40px;color:var(--muted);font-size:12px;border-top:1px solid var(--border);padding-top:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Dino English V1.3.0 · Firebase 埋点验收清单</h1>
+  <div class="sub">协议版本 V0.21（2026-06-26）· 验收逐项打勾，标记已完成/未完成并填写问题描述，便于技术跟踪修复 · 进度自动保存在本机浏览器</div>
+
+  <div class="bar">
+    <div class="meta">
+      <span><label>验收人</label><input id="m_owner" placeholder="姓名" size="8"></span>
+      <span><label>端</label>
+        <select id="m_platform">
+          <option value="android">Android</option>
+          <option value="ios">iOS</option>
+          <option value="web_demo">Web Demo</option>
+        </select>
+      </span>
+      <span><label>构建版本</label><input id="m_build" placeholder="如 1.3.0(120)" size="12"></span>
+      <span><label>验收日期</label><input id="m_date" type="date"></span>
+      <span id="savehint" class="hint" style="margin:0;"></span>
+    </div>
+    <div class="counts" id="counts"></div>
+    <div class="progress" id="progress"></div>
+    <div class="toolbar">
+      <button class="f active" data-f="all">全部</button>
+      <button class="f" data-f="todo">未测</button>
+      <button class="f" data-f="done">已完成</button>
+      <button class="f" data-f="fail">未完成</button>
+      <button class="f" data-f="hasissue">有问题描述</button>
+      <span style="flex:1"></span>
+      <button id="btnCsv">导出 CSV</button>
+      <button id="btnJson">导出 JSON</button>
+      <button id="btnImport">导入 JSON</button>
+      <button id="btnReset">清空本端记录</button>
+      <input id="fileImport" type="file" accept="application/json" style="display:none">
+    </div>
+  </div>
+
+  <div id="app"></div>
+
+  <footer>状态：未测 / 已完成（通过）/ 未完成（不通过，请在问题描述写明现象与复现）/ 不适用。数据存于浏览器 localStorage，按「端」分别保存；换电脑或清缓存前请先导出 JSON。</footer>
+</div>
+
+<script>
+const SPEC = {
+  public: [
+    {k:"event_id", req:"是", note:"事件名 / 类型"},
+    {k:"event_uuid", req:"是", note:"唯一流水号，弱网重试/离线/崩溃恢复去重"},
+    {k:"event_timestamp", req:"是", note:"Firebase 自动采集，UTC"},
+    {k:"session_id", req:"是", note:"Firebase 自动（ga_session_id）"},
+    {k:"uid", req:"登录后必填", note:"= Firebase user_id = AppsFlyer customer_user_id"},
+    {k:"device_id", req:"是", note:"登录前设备匿名 ID，持久化"},
+    {k:"user_pseudo_id", req:"是", note:"Firebase 自动；≠ device_id"},
+    {k:"app_instance_id", req:"是", note:"Firebase 安装实例 ID"},
+    {k:"appsflyer_id", req:"是"},
+    {k:"af_status", req:"是", enum:"organic / non_organic / unknown"},
+    {k:"app_id", req:"是", note:"Firebase 自动"},
+    {k:"app_version", req:"是", note:"Firebase 自动"},
+    {k:"install_source", req:"否"},
+    {k:"platform", req:"是", enum:"ios / android / web_demo"},
+    {k:"device_brand", req:"否"},
+    {k:"device_model", req:"否"},
+    {k:"os", req:"否"},
+    {k:"os_version", req:"否"},
+    {k:"device_language", req:"否"},
+    {k:"install_country", req:"是", enum:"大写 ISO 3166-1 alpha-2 / ZZ", note:"安装获客国家"},
+    {k:"current_country", req:"是", enum:"大写 ISO 3166-1 alpha-2 / ZZ", note:"当前所在国家"},
+    {k:"client_timezone", req:"是", note:"IANA 时区，如 Asia/Seoul"},
+    {k:"network_type", req:"否", enum:"wifi / 2g / 3g / 4g / 5g / offline"},
+    {k:"is_premium", req:"是", note:"boolean"},
+    {k:"media_source", req:"是", note:"未归因填 unknown"},
+    {k:"campaign_id", req:"是", note:"未归因填 unknown"},
+    {k:"campaign", req:"是", note:"未归因填 unknown"},
+    {k:"af_channel", req:"是", note:"未归因填 unknown"}
+  ],
+  userProps: [
+    {k:"signup_time", cat:"一次性", note:"注册成功写入"},
+    {k:"signup_method", cat:"一次性", enum:"apple / google / email / phone / kakao / meta"},
+    {k:"install_country", cat:"一次性", enum:"ISO / ZZ"},
+    {k:"signup_channel", cat:"一次性", note:"无归因填 unknown"},
+    {k:"child_age", cat:"行为触发", note:"年龄选择 / 资料保存"},
+    {k:"learner_type", cat:"行为触发", enum:"child_self / parent_for_child"},
+    {k:"placement_level", cat:"行为触发", note:"完成 trial 后写入；完成前 = null"},
+    {k:"current_level", cat:"行为触发", note:"进入新等级"},
+    {k:"teacher_id", cat:"行为触发", enum:"kim / max / leo"},
+    {k:"setUserId(uid)", cat:"实现", note:"登录成功后调用，关联游客 ID 与 UID；不得写入 PII"}
+  ],
+  events: [
+    {no:"3.1.1", id:"first_open", title:"首次激活", source:"前端 / Firebase 自动采集",
+     timing:"首次安装或卸载重装后首次成功启动自动产生",
+     behaviors:[
+       {item:"自动采集，不手动上报（避免与 app_open/session_start 重复计数）"},
+       {item:"首次安装首次启动上报 1 次"},
+       {item:"卸载重装首次启动再报 1 次（新安装实例，新 app_instance_id）"},
+       {item:"普通二次打开不再上报"}
+     ], props:[]},
+
+    {no:"3.2.1", id:"button_click", title:"按钮点击", source:"前端",
+     timing:"点击纳入范围按钮即上报，不等跳转/接口/结果",
+     behaviors:[
+       {item:"点击即上报一次，不等待页面跳转、接口返回或业务结果"},
+       {item:"同一次点击做防抖，连点/重复渲染/重复绑定不重复上报"},
+       {item:"非枚举内的普通按钮不上报"}
+     ],
+     props:[
+       {k:"button_id", req:"是", enum:"welcome_get_started / welcome_login / home_dino / home_class / home_explore / home_play / subscribe"}
+     ]},
+
+    {no:"3.2.2", id:"step_submitted", title:"客资步骤提交", source:"前端",
+     timing:"完成某步必填内容并点「继续」、客户端校验通过时上报",
+     behaviors:[
+       {item:"仅有效提交上报；点选/切换选项不报"},
+       {item:"点继续但客户端校验未通过不报"},
+       {item:"回退修改后再次提交成功可再报一条（不覆盖历史）；同一次点击防抖"}
+     ],
+     props:[
+       {k:"step_id", req:"是", enum:"1_learner_type / 2_learner_name / 3_learner_age / 4_english_level"},
+       {k:"answer_id", req:"选项类必填", enum:"type: child/self · age: age_3_5/age_6_8/age_9_12/age_13_17/age_18_plus · level: beginner_hello/common_words/simple_sentences/short_stories_describe/full_stories_discussion"},
+       {k:"2_learner_name 隐私", req:"条件", priv:true, note:"该步不上报 answer_id，不上报明文姓名/昵称/邮箱/手机号/语音文本"}
+     ]},
+
+    {no:"3.3.1", id:"signup_result", title:"注册结果", source:"服务端",
+     timing:"注册请求最终处理结果（成功和失败都报）",
+     behaviors:[
+       {item:"一次注册请求只一条；连点/重复回调/弱网重试不重复上报"},
+       {item:"成功时额外上报 Firebase 标准事件 sign_up"},
+       {item:"成功后完成 setUserId(uid) + AppsFlyer setCustomerUserId(uid)"},
+       {item:"三方授权成功但后端未建号 → is_success=false 且记录 failed_reason"},
+       {item:"同设备多账号不做设备级去重"}
+     ],
+     props:[
+       {k:"signup_method", req:"是", enum:"apple / google / email / phone / kakao / meta"},
+       {k:"is_success", req:"是", note:"boolean"},
+       {k:"failed_reason", req:"失败必填", enum:"invalid_request / invalid_third_party_credential / account_unavailable / sms_code_expired / sms_code_invalid / sms_rate_limited / sms_service_unavailable"}
+     ]},
+
+    {no:"3.3.2", id:"login_result", title:"登录结果", source:"服务端",
+     timing:"登录请求最终处理结果（成功和失败都报）",
+     behaviors:[
+       {item:"一次登录请求只一条；连点/重复回调不重复上报"},
+       {item:"成功时额外上报 Firebase 标准事件 login + setUserId(uid)"},
+       {item:"老账号再次授权登录成功 → 报 login_result，不报 signup_result"}
+     ],
+     props:[
+       {k:"login_method", req:"是", enum:"apple / google / email / phone / kakao / meta"},
+       {k:"is_success", req:"是", note:"boolean"},
+       {k:"failed_reason", req:"失败必填", enum:"invalid_request / invalid_third_party_credential / account_unavailable / sms_code_expired / sms_code_invalid / sms_rate_limited / sms_service_unavailable"}
+     ]},
+
+    {no:"3.4.1", id:"teacher_selected", title:"首次选择老师", source:"前端",
+     timing:"首次选老师后点「开始上课」/确认时上报一次",
+     behaviors:[
+       {item:"仅首次确认上报；不记录后续更换"},
+       {item:"存在默认选中老师时，直接点开始上课也上报（teacher_id=默认老师）"},
+       {item:"确认前切换卡片不报；已有老师后改选 → 报 teacher_changed；防抖"}
+     ],
+     props:[
+       {k:"teacher_id", req:"是", enum:"kim / max / leo"}
+     ]},
+
+    {no:"3.4.2", id:"teacher_changed", title:"更换老师", source:"前端",
+     timing:"已有老师后进入选择页并确认更换为另一位老师时",
+     behaviors:[
+       {item:"仅浏览/切换卡片未确认不报"},
+       {item:"确认但老师未变化不报；防抖"}
+     ],
+     props:[
+       {k:"previous_teacher_id", req:"是", enum:"kim / max / leo"},
+       {k:"new_teacher_id", req:"是", enum:"kim / max / leo"}
+     ]},
+
+    {no:"3.5.1", id:"class_lesson_start", title:"课程开始", source:"前端",
+     timing:"进入课堂真正开始上课时；继续未完成课也上报",
+     behaviors:[
+       {item:"首次开始：lesson_start_type=first_start，lesson_start_count=1"},
+       {item:"继续学习：lesson_start_type=resume，count 递增（2,3,…）"},
+       {item:"同 uid+lesson_id 可产生多条；用 lesson_start_count 区分"}
+     ],
+     props:[
+       {k:"lesson_id", req:"是", note:"待产品提供"},
+       {k:"lesson_type", req:"是", enum:"trial / paid"},
+       {k:"lesson_level_id", req:"是", enum:"level_1 / level_2 / level_3 / level_4 / level_5 / level_6"},
+       {k:"teacher_id", req:"是", enum:"kim / max / leo"},
+       {k:"lesson_start_type", req:"是", enum:"first_start / resume"},
+       {k:"lesson_start_count", req:"是", note:"int，首次为 1"},
+       {k:"client_event_time_ms", req:"是", note:"int，Unix 毫秒"}
+     ]},
+
+    {no:"3.5.2", id:"class_lesson_end", title:"课程结束", source:"前端",
+     timing:"课程结束状态确认时（完成/退出/超时/异常恢复）",
+     behaviors:[
+       {item:"与 class_lesson_start 按 uid+lesson_id+lesson_start_count 配对"}
+     ],
+     props:[
+       {k:"lesson_id", req:"是"},
+       {k:"lesson_type", req:"是", enum:"trial / paid"},
+       {k:"lesson_level_id", req:"是", enum:"level_1…level_6"},
+       {k:"teacher_id", req:"是", enum:"kim / max / leo"},
+       {k:"lesson_start_count", req:"是", note:"int，对应第几次进入"},
+       {k:"end_reason", req:"是", enum:"complete / exit / timeout / crash_recovered"},
+       {k:"client_event_time_ms", req:"是", note:"int，Unix 毫秒"}
+     ]},
+
+    {no:"3.5.3", id:"trial_lesson_complete", title:"体验课完成", source:"服务端",
+     timing:"服务端确认正常完成 trial 并写入完成状态时上报一次",
+     behaviors:[
+       {item:"仅正常完成上报；主动退出/超时/闪退恢复都不报"},
+       {item:"同 uid 同 lesson_id 仅一条（服务端去重）"}
+     ],
+     props:[
+       {k:"lesson_id", req:"是"},
+       {k:"lesson_type", req:"是", enum:"trial"},
+       {k:"lesson_level_id", req:"是", enum:"level_1…level_6"},
+       {k:"teacher_id", req:"是", enum:"kim / max / leo"},
+       {k:"placement_level", req:"是", note:"用户定级结果"},
+       {k:"client_event_time_ms", req:"是", note:"int，Unix 毫秒"}
+     ]},
+
+    {no:"3.5.4", id:"class_stage_progress", title:"课中环节进度", source:"前端",
+     timing:"课中教学环节开始或结束时上报",
+     behaviors:[],
+     props:[
+       {k:"lesson_id", req:"是"},
+       {k:"lesson_type", req:"是", enum:"trial / paid"},
+       {k:"lesson_level_id", req:"是", enum:"level_1…level_6"},
+       {k:"teacher_id", req:"是", enum:"kim / max / leo"},
+       {k:"stage_id", req:"是", enum:"warm_up / lead_in / word_learning / sentence_learning / practice / quiz / wrap_up"},
+       {k:"stage_step", req:"是", enum:"stage_start / stage_end"},
+       {k:"client_event_time_ms", req:"是", note:"int，Unix 毫秒"}
+     ]},
+
+    {no:"3.5.5", id:"class_answer_submit", title:"提交答案", source:"前端",
+     timing:"用户提交练习 / Quiz 答案时上报",
+     behaviors:[
+       {item:"多次重试可产生多条，用 attempt_count 区分第几次"}
+     ],
+     props:[
+       {k:"lesson_id", req:"是"},
+       {k:"lesson_type", req:"是", enum:"trial / paid"},
+       {k:"lesson_level_id", req:"是", enum:"level_1…level_6"},
+       {k:"teacher_id", req:"是", enum:"kim / max / leo"},
+       {k:"question_id", req:"是", note:"题库配置表"},
+       {k:"question_index", req:"是", note:"int"},
+       {k:"attempt_count", req:"是", note:"int"},
+       {k:"answer_result", req:"是", enum:"correct / incorrect"},
+       {k:"knowledge_point_id", req:"否", note:"知识点配置表"},
+       {k:"client_event_time_ms", req:"是", note:"int，Unix 毫秒"}
+     ]},
+
+    {no:"3.6.1", id:"dino_assistant_progress", title:"Dino 助教会话进度", source:"前端",
+     timing:"唤起 Dino 时报 session_start；会话结束时报 session_end",
+     behaviors:[
+       {item:"同一会话 start/end 使用同一 dino_session_id"},
+       {item:"仅实际打开 Dino 才报；只进首页/Explore 未打开不报"},
+       {item:"没有生成 dino_session_id 不报"},
+       {item:"timeout = 会话开始后连续 120 秒无有效交互，客户端自动结束"},
+       {item:"杀进程不算 user_exit；下次启动可补报 session_end(exit_type=system_exit)"}
+     ],
+     props:[
+       {k:"dino_session_id", req:"是"},
+       {k:"dino_step", req:"是", enum:"session_start / session_end"},
+       {k:"dino_scene", req:"是", enum:"home / explore_speak"},
+       {k:"exit_type", req:"session_end 必填", enum:"user_exit / system_exit / timeout"}
+     ]},
+
+    {no:"3.7.1", id:"subscription_checkout_start", title:"发起订阅支付", source:"前端",
+     timing:"创建订单成功拿到 order_id 且成功拉起 Apple/Google 支付面板时",
+     behaviors:[
+       {item:"创建订单失败/面板未拉起/仅浏览订阅页/切换 SKU 均不上报"},
+       {item:"与支付结果通过 order_id 串联"}
+     ],
+     props:[
+       {k:"order_id", req:"是"},
+       {k:"sku_id", req:"是", enum:"subscription_pro_{weekly|monthly|yearly}_{t0..t4}（15 个 SKU 枚举）"},
+       {k:"subscription_tier", req:"是", enum:"pro"},
+       {k:"billing_cycle", req:"是", enum:"weekly / monthly / yearly"},
+       {k:"price", req:"是", note:"number，原始展示价"},
+       {k:"currency", req:"是", note:"ISO 4217，如 USD/KRW/SAR"},
+       {k:"payment_channel", req:"是", enum:"apple_iap / google_play"},
+       {k:"subscription_source", req:"是", enum:"study_plan / locked_lesson / locked_words / locked_listening / locked_blind_box / locked_words_pk / locked_speaking_pk / profile_membership"}
+     ]},
+
+    {no:"3.7.2", id:"subscription_purchase_result", title:"订阅支付结果", source:"服务端",
+     timing:"服务端凭证校验后上报最终结果（成功/失败/取消都报）",
+     behaviors:[
+       {item:"支付成功以服务端校验为准，不以前端回调为准"},
+       {item:"成功同步 Firebase 标准事件 purchase + AppsFlyer purchase"},
+       {item:"order_id 串联 subscription_checkout_start"}
+     ],
+     props:[
+       {k:"order_id", req:"首次/主动支付必填"},
+       {k:"purchase_result", req:"是", enum:"success / fail / cancel"},
+       {k:"purchase_type", req:"是", enum:"initial_purchase / renewal"},
+       {k:"sku_id", req:"是", enum:"subscription_pro_{weekly|monthly|yearly}_{t0..t4}（15 个 SKU 枚举）"},
+       {k:"subscription_tier", req:"是", enum:"pro"},
+       {k:"billing_cycle", req:"是", enum:"weekly / monthly / yearly"},
+       {k:"price", req:"成功必填", note:"number，原始实付金额"},
+       {k:"currency", req:"成功必填", note:"ISO 4217"},
+       {k:"payment_channel", req:"是", enum:"apple_iap / google_play"},
+       {k:"transaction_id", req:"成功必填", note:"Apple/Google 交易 ID"},
+       {k:"original_transaction_id", req:"成功必填", note:"同一订阅关系 ID"},
+       {k:"subscription_source", req:"首次/主动支付必填", enum:"study_plan / locked_lesson / locked_words / locked_listening / locked_blind_box / locked_words_pk / locked_speaking_pk / profile_membership"},
+       {k:"failed_reason", req:"失败必填", note:"研发错误码映射表"}
+     ]}
+  ]
+};
+
+const STATUS = ["", "done", "fail", "na"];
+const STATUS_LABEL = {"":"未测","done":"已完成","fail":"未完成","na":"不适用"};
+
+function storeKey(){ return "fet_v021_" + (document.getElementById("m_platform").value||"android"); }
+let state = {meta:{}, items:{}};
+
+function load(){
+  try{ state = JSON.parse(localStorage.getItem(storeKey())) || {meta:{},items:{}}; }
+  catch(e){ state = {meta:{},items:{}}; }
+  if(!state.items) state.items={}; if(!state.meta) state.meta={};
+}
+function save(){
+  localStorage.setItem(storeKey(), JSON.stringify(state));
+  const h=document.getElementById("savehint"); h.textContent="已保存 "+new Date().toLocaleTimeString();
+  setTimeout(()=>h.textContent="",1500);
+}
+
+function reqBadge(req){
+  if(req==="是"||req===true) return '<span class="req">必填</span>';
+  if(req==="否"||req===false) return '<span class="opt">选填</span>';
+  return '<span class="opt">'+req+'</span>'; // 条件必填文案
+}
+
+function rowHtml(id, cat, catCls, item, exp){
+  const it = state.items[id] || {};
+  const st = it.status || "";
+  const opts = STATUS.map(s=>`<option value="${s}" ${s===st?"selected":""}>${STATUS_LABEL[s]}</option>`).join("");
+  return `<tr data-id="${id}" data-status="${st}">
+    <td class="cat ${catCls}">${cat}</td>
+    <td class="item">${item}</td>
+    <td class="exp">${exp||"—"}</td>
+    <td style="width:120px"><select class="st" data-id="${id}" data-v="${st}">${opts}</select></td>
+    <td><textarea class="issue" data-id="${id}" placeholder="问题描述 / 现象 / 复现步骤">${(it.issue||"").replace(/</g,"&lt;")}</textarea></td>
+  </tr>`;
+}
+
+function render(){
+  const app = document.getElementById("app");
+  let html = "";
+
+  // 公共属性
+  html += `<section><h2>0. 公共属性（所有事件都应携带，验收一次）</h2>
+    <table><thead><tr><th>类别</th><th>检查项</th><th>期望 / 枚举</th><th>状态</th><th>问题描述</th></tr></thead><tbody>`;
+  SPEC.public.forEach(p=>{
+    html += rowHtml("pub."+p.k, "属性", "attr", "<code>"+p.k+"</code>", reqBadge(p.req)+(p.enum?(" · "+p.enum):"")+(p.note?(" · "+p.note):""));
+  });
+  html += `</tbody></table></section>`;
+
+  // 用户属性
+  html += `<section><h2>0.1 Firebase User Properties / 用户属性</h2>
+    <table><thead><tr><th>类别</th><th>检查项</th><th>期望 / 枚举</th><th>状态</th><th>问题描述</th></tr></thead><tbody>`;
+  SPEC.userProps.forEach(p=>{
+    html += rowHtml("up."+p.k, p.cat, "attr", "<code>"+p.k+"</code>", (p.enum?p.enum+" · ":"")+(p.note||""));
+  });
+  html += `</tbody></table></section>`;
+
+  // 事件
+  SPEC.events.forEach(ev=>{
+    html += `<section><h2>${ev.no} <code>${ev.id}</code>｜${ev.title}</h2>
+      <div class="evt-meta">端：${ev.source} · 上报时机：${ev.timing}</div>
+      <table><thead><tr><th>类别</th><th>检查项</th><th>期望 / 枚举</th><th>状态</th><th>问题描述</th></tr></thead><tbody>`;
+    (ev.behaviors||[]).forEach((b,i)=>{
+      html += rowHtml(ev.id+".b"+i, "行为", "behav", b.item, b.exp||"符合协议");
+    });
+    (ev.props||[]).forEach(p=>{
+      const cls = p.priv ? "priv" : "attr";
+      const cat = p.priv ? "隐私" : "属性";
+      html += rowHtml(ev.id+".p."+p.k, cat, cls, "<code>"+p.k+"</code>", reqBadge(p.req)+(p.enum?(" · "+p.enum):"")+(p.note?(" · "+p.note):""));
+    });
+    html += `</tbody></table></section>`;
+  });
+
+  app.innerHTML = html;
+  bindRows();
+  updateCounts();
+  applyFilter(currentFilter);
+}
+
+function bindRows(){
+  document.querySelectorAll("select.st").forEach(s=>{
+    s.addEventListener("change", e=>{
+      const id=e.target.dataset.id, v=e.target.value;
+      state.items[id]=state.items[id]||{}; state.items[id].status=v;
+      e.target.dataset.v=v;
+      e.target.closest("tr").dataset.status=v;
+      save(); updateCounts(); applyFilter(currentFilter);
+    });
+  });
+  document.querySelectorAll("textarea.issue").forEach(t=>{
+    t.addEventListener("input", e=>{
+      const id=e.target.dataset.id;
+      state.items[id]=state.items[id]||{}; state.items[id].issue=e.target.value;
+    });
+    t.addEventListener("blur", ()=>{ save(); applyFilter(currentFilter); });
+  });
+}
+
+function allIds(){
+  const ids=[];
+  SPEC.public.forEach(p=>ids.push("pub."+p.k));
+  SPEC.userProps.forEach(p=>ids.push("up."+p.k));
+  SPEC.events.forEach(ev=>{ (ev.behaviors||[]).forEach((b,i)=>ids.push(ev.id+".b"+i)); (ev.props||[]).forEach(p=>ids.push(ev.id+".p."+p.k)); });
+  return ids;
+}
+
+function updateCounts(){
+  const ids=allIds(); let done=0,fail=0,na=0,todo=0;
+  ids.forEach(id=>{ const s=(state.items[id]||{}).status||""; if(s==="done")done++; else if(s==="fail")fail++; else if(s==="na")na++; else todo++; });
+  const total=ids.length, tested=done+fail+na;
+  document.getElementById("counts").innerHTML =
+    `<span class="pill">总计 ${total}</span>`+
+    `<span class="pill done">已完成 ${done}</span>`+
+    `<span class="pill fail">未完成 ${fail}</span>`+
+    `<span class="pill na">不适用 ${na}</span>`+
+    `<span class="pill todo">未测 ${todo}</span>`+
+    `<span class="pill">进度 ${total?Math.round(tested/total*100):0}%</span>`;
+  const p=document.getElementById("progress");
+  const pct=x=>total?(x/total*100):0;
+  p.innerHTML=`<i style="width:${pct(done)}%;background:var(--green)"></i>`+
+    `<i style="width:${pct(fail)}%;background:var(--red)"></i>`+
+    `<i style="width:${pct(na)}%;background:var(--muted)"></i>`;
+}
+
+let currentFilter="all";
+function applyFilter(f){
+  currentFilter=f;
+  document.querySelectorAll("button.f").forEach(b=>b.classList.toggle("active",b.dataset.f===f));
+  document.querySelectorAll("#app tr[data-id]").forEach(tr=>{
+    const id=tr.dataset.id, it=state.items[id]||{}, s=it.status||"";
+    let show=true;
+    if(f==="todo") show=(s==="");
+    else if(f==="done") show=(s==="done");
+    else if(f==="fail") show=(s==="fail");
+    else if(f==="hasissue") show=!!(it.issue&&it.issue.trim());
+    tr.style.display=show?"":"none";
+  });
+  // 隐藏空 section
+  document.querySelectorAll("#app section").forEach(sec=>{
+    const vis=[...sec.querySelectorAll("tr[data-id]")].some(tr=>tr.style.display!=="none");
+    sec.style.display=vis?"":"none";
+  });
+}
+
+// 元信息
+function bindMeta(){
+  ["m_owner","m_build","m_date"].forEach(id=>{
+    const el=document.getElementById(id);
+    el.addEventListener("input",()=>{ state.meta[id]=el.value; save(); });
+  });
+  document.getElementById("m_platform").addEventListener("change",()=>{
+    load(); restoreMeta(); render();
+  });
+}
+function restoreMeta(){
+  ["m_owner","m_build","m_date"].forEach(id=>{ document.getElementById(id).value=state.meta[id]||""; });
+}
+
+// 导出
+function exportJSON(){
+  const blob=new Blob([JSON.stringify({version:"V0.21",platform:document.getElementById("m_platform").value,meta:state.meta,items:state.items},null,2)],{type:"application/json"});
+  dl(blob, `firebase_event_track_${document.getElementById("m_platform").value}.json`);
+}
+function exportCSV(){
+  const rows=[["模块","类别","检查项","期望","状态","问题描述"]];
+  document.querySelectorAll("#app section").forEach(sec=>{
+    const mod=sec.querySelector("h2").textContent.trim();
+    sec.querySelectorAll("tr[data-id]").forEach(tr=>{
+      const id=tr.dataset.id, it=state.items[id]||{};
+      const tds=tr.querySelectorAll("td");
+      rows.push([mod, tds[0].textContent.trim(), tds[1].textContent.trim(), tds[2].textContent.trim(),
+        STATUS_LABEL[it.status||""], (it.issue||"").replace(/\n/g," ")]);
+    });
+  });
+  const csv="\ufeff"+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
+  dl(new Blob([csv],{type:"text/csv"}), `firebase_event_track_${document.getElementById("m_platform").value}.csv`);
+}
+function dl(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
+
+function bindToolbar(){
+  document.querySelectorAll("button.f").forEach(b=>b.addEventListener("click",()=>applyFilter(b.dataset.f)));
+  document.getElementById("btnJson").addEventListener("click",exportJSON);
+  document.getElementById("btnCsv").addEventListener("click",exportCSV);
+  document.getElementById("btnReset").addEventListener("click",()=>{
+    if(confirm("确认清空当前端的全部验收记录？建议先导出 JSON。")){ state={meta:state.meta,items:{}}; save(); render(); }
+  });
+  document.getElementById("btnImport").addEventListener("click",()=>document.getElementById("fileImport").click());
+  document.getElementById("fileImport").addEventListener("change",e=>{
+    const f=e.target.files[0]; if(!f)return; const r=new FileReader();
+    r.onload=()=>{ try{ const d=JSON.parse(r.result); if(d.items){state.items=d.items;} if(d.meta){state.meta=d.meta;} save(); restoreMeta(); render(); alert("导入成功"); }catch(err){ alert("导入失败："+err); } };
+    r.readAsText(f);
+  });
+}
+
+load(); bindMeta(); bindToolbar(); restoreMeta(); render();
+</script>
+</body>
+</html>
