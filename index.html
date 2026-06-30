@@ -31,6 +31,11 @@
     padding:6px 12px;font-size:12.5px;cursor:pointer;}
   button:hover{border-color:var(--accent);}
   button.f.active{background:var(--accent);border-color:var(--accent);color:#0c0f1c;font-weight:600;}
+  button#btnSave{background:var(--accent);border-color:var(--accent);color:#0c0f1c;font-weight:700;}
+  button#btnSave:hover{filter:brightness(1.08);}
+  button#btnSave.dirty{background:var(--amber);border-color:var(--amber);}
+  .dirtydot{display:none;font-size:12px;color:var(--amber);align-self:center;}
+  .dirtydot.show{display:inline;}
   section{margin-bottom:26px;}
   h2{font-size:17px;margin:22px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--border);}
   .evt-meta{font-size:12.5px;color:var(--muted);margin:2px 0 8px;}
@@ -77,6 +82,9 @@
     <div class="counts" id="counts"></div>
     <div class="progress" id="progress"></div>
     <div class="toolbar">
+      <button id="btnSave">保存</button>
+      <span class="dirtydot" id="dirtydot">● 有未保存修改</span>
+      <span style="width:8px"></span>
       <button class="f active" data-f="all">全部</button>
       <button class="f" data-f="todo">未测</button>
       <button class="f" data-f="done">已完成</button>
@@ -93,7 +101,7 @@
 
   <div id="app"></div>
 
-  <footer>状态：未测 / 已完成（通过）/ 未完成（不通过，请在问题描述写明现象与复现）/ 不适用。数据存于浏览器 localStorage，按「端」分别保存；换电脑或清缓存前请先导出 JSON。</footer>
+  <footer>状态：未测 / 已完成（通过）/ 未完成（不通过，请在问题描述写明现象与复现）/ 不适用。修改完成状态或备注后，点击左上角「保存」才会写入本机浏览器（按「端」分别保存）；换电脑或清缓存前请先导出 JSON。</footer>
 </div>
 
 <script>
@@ -371,10 +379,19 @@ function load(){
   catch(e){ state = {meta:{},items:{}}; }
   if(!state.items) state.items={}; if(!state.meta) state.meta={};
 }
+let dirty=false;
+function setDirty(v){
+  dirty=v;
+  const btn=document.getElementById("btnSave"), dot=document.getElementById("dirtydot");
+  if(btn) btn.classList.toggle("dirty",v);
+  if(dot) dot.classList.toggle("show",v);
+  if(btn) btn.textContent = v ? "保存 *" : "保存";
+}
 function save(){
   localStorage.setItem(storeKey(), JSON.stringify(state));
+  setDirty(false);
   const h=document.getElementById("savehint"); h.textContent="已保存 "+new Date().toLocaleTimeString();
-  setTimeout(()=>h.textContent="",1500);
+  setTimeout(()=>{ if(h.textContent.indexOf("已保存")===0) h.textContent=""; },2500);
 }
 
 function reqBadge(req){
@@ -445,15 +462,15 @@ function bindRows(){
       state.items[id]=state.items[id]||{}; state.items[id].status=v;
       e.target.dataset.v=v;
       e.target.closest("tr").dataset.status=v;
-      save(); updateCounts(); applyFilter(currentFilter);
+      setDirty(true); updateCounts();
     });
   });
   document.querySelectorAll("textarea.issue").forEach(t=>{
     t.addEventListener("input", e=>{
       const id=e.target.dataset.id;
       state.items[id]=state.items[id]||{}; state.items[id].issue=e.target.value;
+      setDirty(true);
     });
-    t.addEventListener("blur", ()=>{ save(); applyFilter(currentFilter); });
   });
 }
 
@@ -507,10 +524,14 @@ function applyFilter(f){
 function bindMeta(){
   ["m_owner","m_build","m_date"].forEach(id=>{
     const el=document.getElementById(id);
-    el.addEventListener("input",()=>{ state.meta[id]=el.value; save(); });
+    el.addEventListener("input",()=>{ state.meta[id]=el.value; setDirty(true); });
   });
-  document.getElementById("m_platform").addEventListener("change",()=>{
-    load(); restoreMeta(); render();
+  document.getElementById("m_platform").addEventListener("change",e=>{
+    if(dirty && !confirm("当前端有未保存的修改，切换后将丢失。确定不保存并切换？")){
+      e.target.value=lastPlatform; return;
+    }
+    lastPlatform=e.target.value;
+    load(); setDirty(false); restoreMeta(); render();
   });
 }
 function restoreMeta(){
@@ -539,6 +560,7 @@ function exportCSV(){
 function dl(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
 
 function bindToolbar(){
+  document.getElementById("btnSave").addEventListener("click",()=>{ save(); applyFilter(currentFilter); });
   document.querySelectorAll("button.f").forEach(b=>b.addEventListener("click",()=>applyFilter(b.dataset.f)));
   document.getElementById("btnJson").addEventListener("click",exportJSON);
   document.getElementById("btnCsv").addEventListener("click",exportCSV);
@@ -553,7 +575,9 @@ function bindToolbar(){
   });
 }
 
-load(); bindMeta(); bindToolbar(); restoreMeta(); render();
+let lastPlatform=document.getElementById("m_platform").value;
+window.addEventListener("beforeunload",e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; } });
+load(); bindMeta(); bindToolbar(); restoreMeta(); render(); setDirty(false);
 </script>
 </body>
 </html>
